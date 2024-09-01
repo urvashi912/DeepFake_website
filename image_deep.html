@@ -25,38 +25,30 @@
             }
 
             const file = fileInput.files[0];
-            const reader = new FileReader();
+            const formData = new FormData();
+            formData.append('file', file);
 
-            reader.onloadend = async function() {
-                const base64Image = reader.result.split(',')[1];
+            try {
+                const response = await fetch('http://localhost:5000/detect', {
+                    method: 'POST',
+                    body: formData,
+                });
 
-                try {
-                    const response = await fetch('http://localhost:5000/detect', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ image_data: base64Image }),
-                    });
-
-                    const data = await response.json();
-                    const resultDiv = document.getElementById('deepfake-result');
-                    
-                    if (data.label === 'Deepfake') {
-                        resultDiv.innerHTML = 'Deepfake detected';
-                        resultDiv.className = 'deepfake';
-                    } else {
-                        resultDiv.innerHTML = 'Not a Deepfake';
-                        resultDiv.className = 'not-deepfake';
-                    }
-
-                    resultDiv.style.display = 'block';
-                } catch (error) {
-                    console.error('Error:', error);
+                const data = await response.json();
+                const resultDiv = document.getElementById('deepfake-result');
+                
+                if (data.label === 'Deepfake') {
+                    resultDiv.innerHTML = 'Deepfake detected';
+                    resultDiv.className = 'deepfake';
+                } else {
+                    resultDiv.innerHTML = 'Not a Deepfake';
+                    resultDiv.className = 'not-deepfake';
                 }
-            };
 
-            reader.readAsDataURL(file);
+                resultDiv.style.display = 'block';
+            } catch (error) {
+                console.error('Error:', error);
+            }
         });
     </script>
 </body>
