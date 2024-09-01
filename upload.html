@@ -87,6 +87,23 @@
         .not-deepfake {
             color: green;
         }
+        .loader {
+            border: 16px solid #f3f3f3;
+            border-top: 16px solid #3498db;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #loading-message {
+            display: none;
+            font-size: 18px;
+        }
     </style>
 </head>
 <body>
@@ -99,6 +116,10 @@
         </label>
         <video id="video-preview" controls style="display: none;"></video>
         <button id="check-deepfake-btn">Check Deepfake</button>
+        <div id="loading-message">
+            <div class="loader"></div>
+            <p>Please wait while we process the video...</p>
+        </div>
         <div id="deepfake-result"></div>
     </div>
 
@@ -115,6 +136,7 @@
         });
 
         document.getElementById('check-deepfake-btn').addEventListener('click', async function() {
+            const button = document.getElementById('check-deepfake-btn');
             const fileInput = document.getElementById('video-upload');
             if (fileInput.files.length === 0) {
                 alert('Please upload a video first.');
@@ -124,6 +146,11 @@
             const file = fileInput.files[0];
             const formData = new FormData();
             formData.append('video', file);
+
+            // Disable the button, show loader, and hide result initially
+            button.disabled = true;
+            document.getElementById('loading-message').style.display = 'block';
+            document.getElementById('deepfake-result').style.display = 'none';
 
             try {
                 const response = await fetch('http://localhost:5000/predict', {
@@ -146,6 +173,10 @@
                 resultDiv.innerHTML = 'Failed to detect deepfake. Please try again.';
                 resultDiv.className = 'deepfake';
                 resultDiv.style.display = 'block';
+            } finally {
+                // Hide loader, re-enable button after response is processed
+                document.getElementById('loading-message').style.display = 'none';
+                button.disabled = false;
             }
         });
     </script>
