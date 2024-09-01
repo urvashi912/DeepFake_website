@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Video - Deepfake Detection</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .upload-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            text-align: center;
+        }
+        .upload-title {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        .drop-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 250px;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px dashed #555;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.2s ease-in-out, border 0.2s ease-in-out;
+        }
+        .drop-container:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #fff;
+        }
+        .drop-title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .drop-container input[type=file] {
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: pointer;
+        }
+        #video-preview {
+            max-width: 100%;
+            margin-top: 20px;
+            border-radius: 10px;
+        }
+        #check-deepfake-btn {
+            display: none;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background .2s ease-in-out;
+        }
+        #check-deepfake-btn:hover {
+            background-color: #0056b3;
+        }
+        #deepfake-result {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+        .deepfake {
+            color: red;
+        }
+        .not-deepfake {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <div class="upload-container">
+        <h1 class="upload-title">Upload Video</h1>
+        <label for="video-upload" class="drop-container" id="dropcontainer">
+            <span class="drop-title">Drop video file here</span>
+            or
+            <input type="file" id="video-upload" accept="video/*" required>
+        </label>
+        <video id="video-preview" controls style="display: none;"></video>
+        <button id="check-deepfake-btn">Check Deepfake</button>
+        <div id="deepfake-result"></div>
+    </div>
+
+    <script>
+        document.getElementById('video-upload').addEventListener('change', function(event) {
+            var file = event.target.files[0];
+            var videoPreview = document.getElementById('video-preview');
+            var fileURL = URL.createObjectURL(file);
+            videoPreview.src = fileURL;
+            videoPreview.style.display = 'block';
+
+            // Show the "Check Deepfake" button when a video is uploaded
+            document.getElementById('check-deepfake-btn').style.display = 'inline-block';
+        });
+
+        document.getElementById('check-deepfake-btn').addEventListener('click', async function() {
+            const fileInput = document.getElementById('video-upload');
+            if (fileInput.files.length === 0) {
+                alert('Please upload a video first.');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('video', file);
+
+            try {
+                const response = await fetch('http://localhost:5000/predict', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const resultDiv = document.getElementById('deepfake-result');
+                resultDiv.innerHTML = `Prediction: ${data.output}, Confidence: ${data.confidence}`;
+                resultDiv.className = data.output === 'Deepfake' ? 'deepfake' : 'not-deepfake';
+                resultDiv.style.display = 'block';
+            } catch (error) {
+                console.error('Error:', error);
+                const resultDiv = document.getElementById('deepfake-result');
+                resultDiv.innerHTML = 'Failed to detect deepfake. Please try again.';
+                resultDiv.className = 'deepfake';
+                resultDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
